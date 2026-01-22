@@ -1,0 +1,80 @@
+/* Custom Navbar Styling */
+.custom-navbar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 15px 0;
+}
+
+.brand-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+.brand-text i {
+  color: #667eea;
+  font-size: 1.8rem;
+}
+
+.nav-link-custom {
+  font-weight: 500;
+  margin: 0 10px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-link-custom::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -5px;
+  left: 50%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-link-custom:hover::after {
+  width: 80%;
+}
+
+.theme-toggle {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border: 2px solid #667eea;
+}
+
+/* Light theme - dark icon */
+[data-bs-theme="light"] .theme-toggle {
+  background-color: #f8f9fa;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+[data-bs-theme="light"] .theme-toggle:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #764ba2;
+  color: white;
+  transform: rotate(180deg);
+}
+
+/* Dark theme - light icon */
+[data-bs-theme="dark"] .theme-toggle {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #667eea;
+  color: #ffd700;
+}
+
+[data-bs-theme="dark"] .theme-toggle:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #764ba2;
+  color: white;
+  transform: rotate(180deg);
+}
