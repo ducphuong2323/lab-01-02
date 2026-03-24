@@ -14,6 +14,7 @@
 
 .login-welcome {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background-color: #f5576c; /* Fallback color */
   color: white;
   padding: 60px 40px;
   display: flex;
@@ -72,12 +73,31 @@
   align-items: center;
   margin-bottom: 15px;
   font-size: 1rem;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateX(5px);
 }
 
 .feature-item i {
   font-size: 1.3rem;
   margin-right: 12px;
   color: #4ade80;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.feature-item span {
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: 0.95rem;
 }
 
 .login-form-section {

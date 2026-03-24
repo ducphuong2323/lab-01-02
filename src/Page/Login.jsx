@@ -1,78 +1,121 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert } from 'react-bootstrap';
-import { useNavigate, Navigate } from 'react-router';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { jwtDecode } from 'jwt-decode';
 import './Login.css';
 
-// Get Google Client ID from environment variable
-// Create a .env file and add: VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 function Login() {
   const { login, loginWithGoogle, isLoggedIn } = useAuth();
   const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const googleButtonRef = useRef(null);
-  const isGoogleConfigured = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.length > 0 && !GOOGLE_CLIENT_ID.includes('YOUR_');
 
-  // Redirect if already logged in
-  if (isLoggedIn()) {
-    return <Navigate to="/" replace />;
-  }
+  const googleButtonRef = useRef(null);
+  const googleInitializedRef = useRef(false);
+
+  const isGoogleConfigured =
+    typeof GOOGLE_CLIENT_ID === 'string' &&
+    GOOGLE_CLIENT_ID.trim().length > 0 &&
+    !GOOGLE_CLIENT_ID.includes('YOUR_');
+
+  const handleGoogleResponse = useCallback(
+    async (response) => {
+      setError('');
+      setLoading(true);
+
+      try {
+        if (!response?.credential) {
+          throw new Error('Không nhận được credential từ Google.');
+        }
+
+        const decoded = jwtDecode(response.credential);
+
+        const userEmail = decoded?.email || '';
+        const userName = decoded?.name || 'Google User';
+        const userPicture = decoded?.picture || '';
+
+        if (!userEmail) {
+          throw new Error('Không lấy được email từ tài khoản Google.');
+        }
+
+        await loginWithGoogle(userEmail, userName, userPicture);
+        navigate('/');
+      } catch (err) {
+        console.error('Google login error:', err);
+        setError('Đăng nhập Google thất bại: ' + (err.message || 'Unknown error'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loginWithGoogle, navigate]
+  );
 
   useEffect(() => {
-    // Only initialize Google Sign-In if Client ID is configured
-    if (isGoogleConfigured && window.google) {
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse,
-      });
+    console.log('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID);
+console.log('window.google:', window.google);
+console.log('googleButtonRef.current:', googleButtonRef.current);
+    if (!isGoogleConfigured) return;
 
-      // Render the Google Sign-In button
-      if (googleButtonRef.current) {
-        window.google.accounts.id.renderButton(
-          googleButtonRef.current,
-          {
-            theme: 'outline',
-            size: 'large',
-            width: '100%',
-            text: 'continue_with',
-            shape: 'rectangular',
-          }
-        );
+    const waitForGoogle = () => {
+      if (
+        !window.google ||
+        !window.google.accounts ||
+        !window.google.accounts.id ||
+        !googleButtonRef.current
+      ) {
+        return false;
       }
-    }
-  }, [isGoogleConfigured]);
 
-  const handleGoogleResponse = async (response) => {
-    setError('');
-    setLoading(true);
+      if (googleInitializedRef.current) {
+        return true;
+      }
 
-    try {
-      // Decode the JWT token to get user info
-      const decoded = jwtDecode(response.credential);
-      
-      // Extract user information
-      const userEmail = decoded.email;
-      const userName = decoded.name;
-      const userPicture = decoded.picture;
+      try {
+        googleInitializedRef.current = true;
 
-      console.log('Google user info:', { userEmail, userName, userPicture });
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
 
-      // Login with Google
-      await loginWithGoogle(userEmail, userName, userPicture);
-      navigate('/');
-    } catch (err) {
-      console.error('Google login error:', err);
-      setError('Đăng nhập Google thất bại: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        googleButtonRef.current.innerHTML = '';
+
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: 350,
+          text: 'continue_with',
+          shape: 'rectangular',
+          logo_alignment: 'left',
+        });
+
+        return true;
+      } catch (err) {
+        console.error('Google Sign-In initialization error:', err);
+        setError('Lỗi khởi tạo Google Sign-In: ' + (err.message || 'Unknown error'));
+        googleInitializedRef.current = false;
+        return true;
+      }
+    };
+
+    if (waitForGoogle()) return;
+
+    const intervalId = setInterval(() => {
+      if (waitForGoogle()) {
+        clearInterval(intervalId);
+      }
+    }, 300);
+
+    return () => clearInterval(intervalId);
+  }, [handleGoogleResponse, isGoogleConfigured]);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
@@ -84,10 +127,11 @@ function Login() {
       if (result.success) {
         navigate('/');
       } else {
-        setError(result.message || 'Login failed');
+        setError(result.message || 'Đăng nhập thất bại');
       }
     } catch (err) {
-      setError('An error occurred during login');
+      console.error('Email login error:', err);
+      setError('Có lỗi xảy ra trong quá trình đăng nhập');
     } finally {
       setLoading(false);
     }
@@ -103,6 +147,10 @@ function Login() {
     }
   };
 
+  if (isLoggedIn()) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="login-page">
       <Container>
@@ -110,13 +158,13 @@ function Login() {
           <Col md={10} lg={8}>
             <Card className="login-card shadow-lg">
               <Row className="g-0">
-                {/* Left Side - Welcome Section */}
                 <Col md={6} className="login-welcome">
                   <div className="welcome-content">
                     <i className="bi bi-flower1 welcome-icon"></i>
                     <h2>Chào mừng đến</h2>
                     <h1>Orchid Paradise</h1>
                     <p>Khám phá và chia sẻ đam mê của bạn về những loài lan tuyệt đẹp</p>
+
                     <div className="welcome-features">
                       <div className="feature-item">
                         <i className="bi bi-check-circle-fill"></i>
@@ -134,7 +182,6 @@ function Login() {
                   </div>
                 </Col>
 
-                {/* Right Side - Login Form */}
                 <Col md={6} className="login-form-section">
                   <div className="login-form-content">
                     <h3 className="text-center mb-4">Đăng nhập</h3>
@@ -145,31 +192,43 @@ function Login() {
                       </Alert>
                     )}
 
-                    {/* Warning if Google Client ID not configured */}
                     {!isGoogleConfigured && (
                       <Alert variant="warning">
-                        <Alert.Heading><i className="bi bi-exclamation-triangle me-2"></i>Cần cấu hình Google Client ID</Alert.Heading>
+                        <Alert.Heading>
+                          <i className="bi bi-exclamation-triangle me-2"></i>
+                          Cần cấu hình Google Client ID
+                        </Alert.Heading>
                         <p className="mb-2">Để sử dụng đăng nhập Google, vui lòng:</p>
                         <ol className="mb-0 small">
-                          <li>Tạo Client ID tại <Alert.Link href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</Alert.Link></li>
-                          <li>Thêm vào file <code>.env</code>: <code>VITE_GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com</code></li>
-                          <li>Khởi động lại server: <code>npm run dev</code></li>
+                          <li>Tạo Client ID tại Google Cloud Console</li>
+                          <li>
+                            Thêm vào file <code>.env</code>:
+                            <br />
+                            <code>VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com</code>
+                          </li>
+                          <li>
+                            Khởi động lại server: <code>npm run dev</code>
+                          </li>
                         </ol>
-                        <hr />
-                        <p className="mb-0 small">Xem hướng dẫn chi tiết trong file <strong>GOOGLE_SETUP.md</strong></p>
                       </Alert>
                     )}
 
-                    {/* Google Sign-In Button (Official) - Only show if configured */}
                     {isGoogleConfigured && (
-                      <div ref={googleButtonRef} className="mb-3" style={{ display: 'flex', justifyContent: 'center' }}></div>
+                      <div className="mb-3">
+                        <div ref={googleButtonRef} className="d-flex justify-content-center"></div>
+                        <div className="text-center mt-2">
+                          <small className="text-muted">
+                            <i className="bi bi-shield-check me-1"></i>
+                            Đăng nhập an toàn với Google
+                          </small>
+                        </div>
+                      </div>
                     )}
 
                     <div className="divider">
                       <span>{isGoogleConfigured ? 'hoặc' : 'Đăng nhập bằng Email'}</span>
                     </div>
 
-                    {/* Email/Password Form */}
                     <Form onSubmit={handleEmailLogin}>
                       <Form.Group className="mb-3">
                         <Form.Label>Email</Form.Label>
@@ -203,7 +262,6 @@ function Login() {
                       </Button>
                     </Form>
 
-                    {/* Test Accounts Section */}
                     <div className="test-accounts mt-4">
                       <p className="text-muted text-center small mb-2">Tài khoản dùng thử:</p>
                       <div className="d-flex gap-2">
