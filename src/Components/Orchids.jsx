@@ -1,8 +1,10 @@
 import React from 'react';
 import { Card, Button, Badge } from 'react-bootstrap';
+import { useNavigate } from 'react-router';
 import './Orchids.css';
 
-function Orchids({ name, rating, isSpecial, isNatural, image, color, numberOfLike, origin, category, onViewDetail }) {
+function Orchids({ orchidId, name, rating, isSpecial, isNatural, image, color, numberOfLike, origin, category, onViewDetail }) {
+  const navigate = useNavigate();
   // Map countries to flag images
   const countryFlags = {
     'Taiwan': 'https://flagcdn.com/w320/tw.png',
