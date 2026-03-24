@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Container, Row, Col, Button, Badge, Card } from 'react-bootstrap';
 import { ListOfOrchids } from '../ListOfOrchids';
+import FeedbackSection from '../Components/FeedbackSection';
 import './Detail.css';
 
 function Detail() {
@@ -220,6 +221,9 @@ function Detail() {
             </div>
           </Col>
         </Row>
+
+        {/* Feedback Section */}
+        <FeedbackSection orchidId={orchid.Id} orchidName={orchid.name} />
 
         {/* Related Orchids Section */}
         <div className="related-section mt-5">

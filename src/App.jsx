@@ -10,26 +10,37 @@ import Contact from "./Page/Contact";
 import About from "./Page/About";
 import Natural from "./Page/Natural";
 import Special from "./Page/Special";
+import Login from "./Page/Login";
+import Profile from "./Page/Profile";
+import AdminDashboard from "./Page/AdminDashboard";
+import AdminCategories from "./Page/AdminCategories";
 import { useTheme } from "./hooks/useTheme";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <Router>
-      <div className="App">
-        <MyNavbar theme={theme} toggleTheme={toggleTheme} />
-        
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/detail/:id" element={<Detail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/naturals" element={<Natural />} />
-          <Route path="/specials" element={<Special />} />
-          <Route path="/contact" element={<Contact />} />
-        </Routes>
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <MyNavbar theme={theme} toggleTheme={toggleTheme} />
+          
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/detail/:id" element={<Detail />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/naturals" element={<Natural />} />
+            <Route path="/specials" element={<Special />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

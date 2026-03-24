@@ -40,6 +40,21 @@
   width: 80%;
 }
 
+/* User Avatar */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #667eea;
+}
+
+.user-menu-title {
+  display: flex;
+  align-items: center;
+}
+
+/* Theme Toggle */
 .theme-toggle {
   border-radius: 50%;
   width: 40px;

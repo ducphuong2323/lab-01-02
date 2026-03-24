@@ -1,24 +1,47 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Form, InputGroup } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import Orchids from "../Components/Orchids";
 import OrchidModal from "../Components/OrchidModal";
-import { ListOfOrchids } from "../ListOfOrchids";
+import { ListOfOrchids, getCategories } from "../ListOfOrchids";
 import { useModal } from "../hooks/useModal";
 import { useNavigate } from "react-router";
 
 function Home() {
   const [selectedTheme, setSelectedTheme] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const { isOpen, selectedItem, openModal, closeModal } = useModal();
   const navigate = useNavigate();
 
   const data = ListOfOrchids;
+  const categories = useMemo(() => getCategories(), []);
 
-  const filteredData =
-    selectedTheme === "all"
-      ? data
-      : data.filter((item) => item.theme === selectedTheme);
+  // Combined filtering: theme, search, and category
+  const filteredData = useMemo(() => {
+    let filtered = data;
+
+    // Filter by theme
+    if (selectedTheme !== "all") {
+      filtered = filtered.filter((item) => item.theme === selectedTheme);
+    }
+
+    // Filter by search query (name)
+    if (searchQuery) {
+      filtered = filtered.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((item) => item.category === selectedCategory);
+    }
+
+    return filtered;
+  }, [data, selectedTheme, searchQuery, selectedCategory]);
 
   const handleViewDetail = (orchid) => {
     navigate(`/detail/${orchid.Id}`);
@@ -69,6 +92,61 @@ function Home() {
             Explore our curated selection of premium orchids
           </p>
 
+          {/* Search and Filter Section */}
+          <div className="search-filter-section">
+            <div className="row g-3 mb-4">
+              <div className="col-md-6">
+                <InputGroup>
+                  <InputGroup.Text>
+                    <i className="bi bi-search"></i>
+                  </InputGroup.Text>
+                  <Form.Control
+                    type="text"
+                    placeholder="Search orchids by name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="search-input"
+                  />
+                  {searchQuery && (
+                    <InputGroup.Text
+                      onClick={() => setSearchQuery("")}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <i className="bi bi-x-circle"></i>
+                    </InputGroup.Text>
+                  )}
+                </InputGroup>
+              </div>
+              <div className="col-md-6">
+                <InputGroup>
+                  <InputGroup.Text>
+                    <i className="bi bi-funnel"></i>
+                  </InputGroup.Text>
+                  <Form.Select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="category-select"
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </InputGroup>
+              </div>
+            </div>
+
+            {/* Results count */}
+            <div className="results-info mb-3">
+              <span className="badge bg-primary">
+                <i className="bi bi-filter-circle me-1"></i>
+                Showing {filteredData.length} of {data.length} orchids
+              </span>
+            </div>
+          </div>
+
           {/* Filter Tabs */}
           <div className="filter-tabs">
             <button
@@ -98,22 +176,43 @@ function Home() {
           </div>
 
           <div className="orchid-grid">
-            {filteredData.map((item) => (
-              <Orchids
-                key={item.Id}
-                orchidId={item.Id}
-                name={item.name}
-                rating={item.rating}
-                isSpecial={item.isSpecial}
-                isNatural={item.isNatural}
-                image={item.image}
-                color={item.color}
-                numberOfLike={item.numberOfLike}
-                origin={item.origin}
-                category={item.category}
-                onViewDetail={() => handleViewDetail(item)}
-              />
-            ))}
+            {filteredData.length > 0 ? (
+              filteredData.map((item) => (
+                <Orchids
+                  key={item.Id}
+                  orchidId={item.Id}
+                  name={item.name}
+                  rating={item.rating}
+                  isSpecial={item.isSpecial}
+                  isNatural={item.isNatural}
+                  image={item.image}
+                  color={item.color}
+                  numberOfLike={item.numberOfLike}
+                  origin={item.origin}
+                  category={item.category}
+                  onViewDetail={() => handleViewDetail(item)}
+                />
+              ))
+            ) : (
+              <div className="no-results">
+                <i className="bi bi-search"></i>
+                <h3>No orchids found</h3>
+                <p>
+                  Try adjusting your search or filter criteria
+                </p>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("all");
+                    setSelectedTheme("all");
+                  }}
+                >
+                  <i className="bi bi-arrow-clockwise me-2"></i>
+                  Reset Filters
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
